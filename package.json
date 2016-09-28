@@ -1,0 +1,17 @@
+{
+  "name": "arc-ci-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "private": true,
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "http": "0.0.0"
+  },
+  "scripts": {
+    "publish": "gcloud compute copy-files ./index.js ./package.json ./stage-build ci:/var/ci/server"
+  }
+}
