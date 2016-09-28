@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -e
+
+ORIG_PATH=`pwd`
+COMPONENT=$1
+BUILD_PATH="`pwd`/../build"
+
+if [ -z "$COMPONENT" -a "${COMPONENT+xxx}" = "xxx" ]; then
+  echo "Empty component name"
+  exit 1;
+fi
+
+function ensureDir() {
+  if [ ! -d "$1" ]; then
+    mkdir -p $1
+  fi
+}
+function version() {
+  local __version=$1
+  local version=`node -pe 'JSON.parse(process.argv[1]).version' "$(cat bower.json)"`
+  eval $__version="'$version'"
+}
+function throwError() {
+  echo $1
+  exit 111
+}
+
+FULL_NAME="advanced-rest-client/$COMPONENT";
+SSH="git@github.com:${FULL_NAME}.git";
+WORKING_DIR="${BUILD_PATH}/${COMPONENT}";
+
+pwd
+ensureDir $WORKING_DIR
+cd $BUILD_PATH
+
+# npm install arc-tools
+cd $COMPONENT
+
+if [ -d "$WORKING_DIR/.git/" ]; then
+  git fetch --all
+  git reset --hard origin/master
+  git checkout master 2> /dev/null;
+else
+  git clone $SSH
+fi
+
+version elementVersion || throwError "Error to read element version number."
+
+if git rev-parse $elementVersion >/dev/null 2>&1
+then
+    echo "Tag $elementVersion already exists."
+    exit 0;
+fi
+
+git tag -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "Error: Tag $elementVersion already exists."
+echo pushing tags
+git push origin master --tags
+echo making a release
+$BUILD_PATH/node_modules/.bin/arc master-release || throwError "Unable to create the release"
+echo "OK"
+exit

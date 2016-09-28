@@ -10,7 +10,6 @@ if [ -z "$COMPONENT" -a "${COMPONENT+xxx}" = "xxx" ]; then
   exit 1;
 fi
 
-pwd
 cd ../build
 
 npm install arc-tools

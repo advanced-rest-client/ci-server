@@ -23,6 +23,7 @@ class ArcCiServer {
 
   setHandlers() {
     this.setStageUpdate();
+    this.setTestServiice();
   }
 
   createServer() {
@@ -31,6 +32,12 @@ class ArcCiServer {
       console.log('HTTP started (' + this.port + ').');
     });
   }
+
+  // setTestServiice() {
+  //   app.get('/', (req, res) => {
+  //     this.handleRelease('test-element');
+  //   });
+  // }
 
   /**
    * This endpoint is called when the `stage` branch has been updated (after PR).
@@ -71,25 +78,41 @@ class ArcCiServer {
 
   handlePullRequest(body) {
     // empty for now
-    console.log('handlePullRequest', body);
+    console.log('handlePullRequest');
   }
 
   handlePush(body) {
-    console.log('Handle push');
     var branch = body.ref;
     if (!branch) {
       console.log('No ref...');
       return;
     }
     if (branch === 'refs/heads/stage') {
+      if (body.head_commit.message === 'Initial commit') {
+        // Just quietly exit
+        return;
+      }
+
       // Check if this isn't our own change to stage
       if (body.head_commit.message.indexOf('[CI]') === 0) {
         console.log('Dropping task. It\'s an CI commit.');
         console.log();
         return;
       }
+
       let repoName = body.repository.name;
       this.handleStageBuild(repoName);
+    } else if ('refs/heads/master') {
+      if (body.head_commit.message === 'Initial commit') {
+        // Just quietly exit
+        return;
+      }
+      if (body.head_commit.message === '[CI] Automated merge stage->master') {
+        let repoName = body.repository.name;
+        this.handleRelease(repoName);
+      } else {
+        console.log('Unsuppoeted master branch');
+      }
     } else {
       console.log('Dropping branch ' + branch);
     }
@@ -97,22 +120,47 @@ class ArcCiServer {
 
   handleStageBuild(name) {
     console.log('Building: ' + name);
+    this._runScript('./stage-build', [name], 'stage');
+  }
+
+  handleRelease(name) {
+    console.log('Tagging: ' + name);
+    if (!process.env.GITHUB_TOKEN) {
+      console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
+      return;
+    }
+    this._runScript('./tag-build', [name], 'release');
+  }
+  /**
+   * Run a bash file
+   *
+   * @param {String} file A file name to Run
+   * @param {Array<String>} Array of parameters
+   */
+  _runScript(file, params, name) {
     try {
       const spawn = require('child_process').spawn;
-      const build = spawn('./stage-build', [name]);
+      const build = spawn(file, params);
+
       build.stdout.on('data', (data) => {
-        console.log(`build: ${data}`);
+        if (!data) {
+          return;
+        }
+        console.log(`[${name}]: ${data}`);
       });
 
       build.stderr.on('data', (data) => {
-        console.error(`build error: ${data}`);
+        if (!data) {
+          return;
+        }
+        console.error(`[${name}]: ${data}`);
       });
 
       build.on('close', (code) => {
-        console.log(`Build finished with code ${code}`);
+        console.log(`[${name}] finished with code ${code}`);
       });
     } catch (e) {
-      console.error(`build error: ${e.message}`);
+      console.error(`[${name}] fatal error: ${e.message}`);
     }
   }
 }
