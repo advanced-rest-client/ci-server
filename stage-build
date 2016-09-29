@@ -12,7 +12,7 @@ fi
 
 cd ../build
 
-npm install arc-tools
+npm install --silent arc-tools
 
 FULL_NAME="advanced-rest-client/$COMPONENT";
 SSH="git@github.com:${FULL_NAME}.git";

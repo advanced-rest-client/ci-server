@@ -41,23 +41,30 @@ if [ -d "$WORKING_DIR/.git/" ]; then
   git reset --hard origin/master
   git checkout master 2> /dev/null;
 else
-  cd ..
   git clone $SSH
-  cd $COMPONENT
 fi
 
-version elementVersion || throwError "Error to read element version number."
+cd ../
+echo "Running arc structure --release --quiet $COMPONENT from `pwd`"
+./node_modules/.bin/arc structure --release --quiet $COMPONENT || throwError "Unable to update the structure element"
+echo "Structure updated. Updating catalog."
 
-if git rev-parse $elementVersion >/dev/null 2>&1
-then
-    echo "Tag $elementVersion already exists."
-    exit 0;
+cd arc-element-catalog
+if [ -d ".git/" ]; then
+  git fetch --all
+  git reset --hard origin/master
+  git checkout master 2> /dev/null;
+else
+  cd ..
+  git clone git@github.com:advanced-rest-client/arc-element-catalog.git
+  cd arc-element-catalog
 fi
-
-git tag -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "Error: Tag $elementVersion already exists."
-echo pushing tags
-git push origin master --tags
-echo making a release
-$BUILD_PATH/node_modules/.bin/arc master-release || throwError "Unable to create the release"
-echo "OK"
+echo "Updating node"
+npm install --silent
+echo "Updating bower"
+bower install --silent && bower update --silent
+echo "Running build task"
+gulp
+echo "Deploying... "
+firebase deploy --token "$FIREBASE_TOKEN" --project arc-element-catalog
 exit
