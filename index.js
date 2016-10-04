@@ -9,7 +9,7 @@ const StringDecoder = require('string_decoder').StringDecoder;
 const decoder = new StringDecoder('utf8');
 
 app.use(router);
-app.use(bodyParser.raw({type: 'application/*'}));
+app.use(bodyParser.raw({type: 'application/*', limit: '50mb'}));
 
 class ArcCiServer {
 
