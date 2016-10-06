@@ -11,6 +11,8 @@ if [ -z "$COMPONENT" -a "${COMPONENT+xxx}" = "xxx" ]; then
   exit 1;
 fi
 
+echo "Updating strucute for element $COMPONENT"
+
 function ensureDir() {
   if [ ! -d "$1" ]; then
     mkdir -p $1
@@ -48,23 +50,31 @@ cd ../
 echo "Running arc structure --release --quiet $COMPONENT from `pwd`"
 ./node_modules/.bin/arc structure --release --quiet $COMPONENT || throwError "Unable to update the structure element"
 echo "Structure updated. Updating catalog."
-
-cd arc-element-catalog
-if [ -d ".git/" ]; then
+UPDATE_DEPS=0
+if [ ! -d ./arc-element-catalog ]; then
+  git clone git@github.com:advanced-rest-client/arc-element-catalog.git;
+  cd arc-element-catalog;
+else
+  cd arc-element-catalog
   git fetch --all
   git reset --hard origin/master
   git checkout master 2> /dev/null;
-else
-  cd ..
-  git clone git@github.com:advanced-rest-client/arc-element-catalog.git
-  cd arc-element-catalog
+  UPDATE_DEPS=1
 fi
-echo "Updating node"
-npm install --silent
-echo "Updating bower"
-bower install --silent && bower update --silent
+if [ $UPDATE_DEPS == 0 ]; then
+  echo "Installing node"
+  npm install --silent
+  echo "Installing bower"
+  bower install --silent
+else
+  echo "Updating node"
+  npm update --dev --silent
+  echo "Updating bower"
+  bower update --save --save-dev --silent
+fi
+
 echo "Running build task"
 gulp
 echo "Deploying... "
-firebase deploy --token "$FIREBASE_TOKEN" --project arc-element-catalog
-exit
+firebase deploy --token "$FIREBASE_TOKEN" --project arc-element-catalog --non-interactive
+exit 0

@@ -73,16 +73,16 @@ class ArcCiServer {
         // console.log(hmac.digest('hex'));
         return res.sendStatus(204);
       }
-      let allowedEvents = ['pull_request', 'push'];
+      let allowedEvents = ['push'];
       if (allowedEvents.indexOf(event) === -1) {
         return res.sendStatus(404);
       }
       res.set('Connection', 'close');
       let body = JSON.parse(decoder.write(req.body));
-      if (event === 'pull_request') {
-        // this.handlePullRequest(body);
-        return res.sendStatus(204);
-      }
+      // if (event === 'pull_request') {
+      //   // this.handlePullRequest(body);
+      //   return res.sendStatus(204);
+      // }
       if (event === 'push') {
         this.handlePush(body);
         return res.sendStatus(204);
