@@ -47,7 +47,7 @@ else
 fi
 
 cd ../
-echo "Running arc structure --release --quiet $COMPONENT from `pwd`"
+echo "Running arc structure --release $COMPONENT from `pwd`"
 ./node_modules/.bin/arc structure --release --quiet $COMPONENT || throwError "Unable to update the structure element"
 echo "Structure updated. Updating catalog."
 UPDATE_DEPS=0
