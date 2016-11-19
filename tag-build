@@ -6,8 +6,11 @@ ORIG_PATH=`pwd`
 COMPONENT=$1
 BUILD_PATH="`pwd`/../build"
 
+echo " "
+echo "  Hello. Building release for $COMPONENT"
+
 if [ -z "$COMPONENT" -a "${COMPONENT+xxx}" = "xxx" ]; then
-  echo "Empty component name"
+  echo "  Empty component name"
   exit 1;
 fi
 
@@ -31,10 +34,7 @@ SSH="git@github.com:${FULL_NAME}.git";
 WORKING_DIR="${BUILD_PATH}/${COMPONENT}";
 
 ensureDir $WORKING_DIR
-cd $BUILD_PATH
-
-npm install --silent arc-tools
-cd $COMPONENT
+cd $WORKING_DIR
 
 if [ -d "$WORKING_DIR/.git/" ]; then
   git fetch --all
@@ -46,18 +46,20 @@ else
   cd $COMPONENT
 fi
 
-version elementVersion || throwError "Error to read element version number."
+version elementVersion || throwError "  Error to read element version number."
 
 if git rev-parse $elementVersion >/dev/null 2>&1
 then
-    echo "Tag $elementVersion already exists."
+    echo "  Tag $elementVersion already exists."
     exit 0;
 fi
-
-git tag -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "Error: Tag $elementVersion already exists."
-echo pushing tags
+echo "  Tagging version..."
+git tag -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "  Error: Tag $elementVersion already exists."
+echo "  Pushing tags..."
 git push origin master --tags
-echo making a release
-$BUILD_PATH/node_modules/.bin/arc master-release || throwError "Unable to create the release"
-echo "OK"
-exit
+echo "  Installing conventional-github-releaser..."
+npm install --silent conventional-github-releaser
+echo "  Creating the release..."
+./node_modules/.bin/conventional-github-releaser -p eslint
+echo " "
+exit 0;

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -e
+
+ORIG_PATH=`pwd`
+COMPONENT=$1
+TRAVIS_BUILD_NUMBER=$2
+TRAVIS_JOB_NUMBER=$3
+
+echo " "
+echo "  Hello. Building stage for $COMPONENT"
+
+if [ -z "$COMPONENT" -a "${COMPONENT+xxx}" = "xxx" ]; then
+  echo "  Provide the component name"
+  exit 1;
+fi
+
+cd ../build
+
+echo "  Installing ARC tools..."
+npm install --silent arc-tools
+
+# some credentials
+git config --global user.email "arc@mulesoft.com"
+git config --global user.name "CI Agent"
+
+echo "  Executiong ARC stage"
+./node_modules/.bin/arc stage --working-dir="`pwd`" $COMPONENT
+echo " "
+exit 0;

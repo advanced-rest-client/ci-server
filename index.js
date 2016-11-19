@@ -88,6 +88,23 @@ class ArcCiServer {
         return res.sendStatus(204);
       }
     });
+    
+    app.post('/travis-build', (req, res) => {
+      if (!req.body) {
+        console.log(req);
+        return res.sendStatus(400);
+      }
+      let event = req.get('x-travis-ci-event');
+      switch (event) {
+        case 'build-stage': 
+          let body = JSON.parse(decoder.write(req.body));
+          this.buildStage(body);
+        break;
+        default:
+          return res.sendStatus(400);
+      }
+      return res.sendStatus(204);
+    });
   }
 
   // handlePullRequest(body) {
@@ -109,18 +126,23 @@ class ArcCiServer {
       return; // Don't process this repos.
     }
     if (branch === 'refs/heads/stage') {
-      if (message === 'Initial commit') {
-        // Just quietly exit
-        return;
-      }
-
-      // Check if this isn't our own change to stage
-      if (message.indexOf('[CI]') === 0) {
-        console.log('Dropping task. It\'s an CI commit.');
-        console.log();
-        return;
-      }
-      this.handleStageBuild(repoName);
+      //
+      // This part was replaced by Travis call.
+      // See raml-path-to-object for travis configuration.
+      // 
+      
+      // if (message === 'Initial commit') {
+      //   // Just quietly exit
+      //   return;
+      // }
+      // 
+      // // Check if this isn't our own change to stage
+      // if (message.indexOf('[CI]') === 0) {
+      //   console.log('Dropping task. It\'s an CI commit.');
+      //   console.log();
+      //   return;
+      // }
+      // this.handleStageBuild(repoName);
     } else if (branch === 'refs/heads/master') {
       if (message === 'Initial commit') {
         // Just quietly exit
@@ -129,7 +151,7 @@ class ArcCiServer {
       if (message === '[CI] Automated merge stage->master') {
         this.handleRelease(repoName);
       } else {
-        console.log('Unsuppoeted master branch');
+        console.log('Unsuppoeted master commit');
       }
     } else if (branch.indexOf('refs/tags/') === 0) {
       // if (message.indexOf('[CI]') !== -1) {
@@ -176,7 +198,8 @@ class ArcCiServer {
    * Run a bash file
    *
    * @param {String} file A file name to Run
-   * @param {Array<String>} Array of parameters
+   * @param {Array<String>} params Array of parameters
+   * @param {String} name The name of process to mark. Optional.
    */
   _runScript(file, params, name) {
     return new Promise((resolve, reject) => {
@@ -188,20 +211,30 @@ class ArcCiServer {
           if (!data) {
             return;
           }
-          console.log(`[${name}]: ${data}`);
+          if (name) {
+            console.log(`[${name}]: ${data}`);
+          } else {
+            console.log(data.toString('utf8'));
+          }
         });
 
         build.stderr.on('data', (data) => {
           if (!data) {
             return;
           }
-          console.error(`[${name}]: ${data}`);
+          if (name) {
+            console.error(`[${name}]: ${data}`);
+          } else {
+            console.error(data.toString('utf8'));
+          }
         });
 
         build.on('close', (code) => {
-          console.log(`[${name}] finished with code ${code}`);
+          if (name) {
+            console.log(`[${name}] finished with code ${code}`);
+          }
           if (code === 0 || code === '0') {
-            resolve();
+            resolve(code);
           } else {
             reject(new Error(`task [${name}] finished with code ${code}`));
           }
@@ -211,6 +244,45 @@ class ArcCiServer {
         console.error(msg);
         reject(msg);
       }
+    });
+  }
+  
+  /**
+   * Build stage branch after travis reported successful build.
+   * This comand is executed not from the GitHub event but from travis `after_success` script.
+   * 
+   * @param {Object} body Body sent from the script.
+   */
+  buildStage(body) {
+    if (body.branch !== 'stage') {
+      return console.error('This is not the stage branch.');
+    }
+    if (body.pullRequest === 'true' || body.pullRequest === true) {
+      // TODO: should update author's agreement for publishing code.
+      return console.info('Passing on pull request');
+    }
+    var slug = body.slug; // owner_name/repo_name
+    if (!slug || slug === 'unknown') {
+      return console.error('The slug is unknown.');
+    }
+    
+    var elementName = slug.split('/')[1];
+    console.log(' ');
+    console.log('  Building element for stage.');
+    console.log('    build number: %s', body.buildNumber);
+    console.log('    job #: %s', body.jobNumber);
+    console.log('    commit sha: %s', body.commit);
+    // console.log('    is pull request: %s', body.pullRequest); // not yer to be used.
+    // console.log('    pull request sha: %s', body.pullRequestSha);
+    
+    var args = [elementName, body.buildNumber, body.jobNumber];
+    this._runScript('./stage-build2', args).then((code) => {
+      console.log(`  stage-build2 exited with code ${code}`);
+      console.log(' ');
+    })
+    .catch((e) => {
+      console.log(`  stage-build2 exited with error ${e.message}`);
+      console.log(' ');
     });
   }
 

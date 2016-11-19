@@ -60,7 +60,8 @@ echo "Building changelog"
 $ORIG_PATH/node_modules/.bin/arc changelog || throwError "Unable to build changelog"
 git add -A
 echo "Commiting changes made to the stage branch"
-git commit -m "[CI] Automated commit after stage build (bump, docs, changelog)." || throwError "Unable to commit changes to stage. Exiting."
+# [ci skip] so Travis will not check for the same branch again.
+git commit -m "[CI] Automated commit after stage build (bump, docs, changelog). [ci skip]" || throwError "Unable to commit changes to stage. Exiting."
 
 echo "Stage updated, merging with master"
 setMaster
