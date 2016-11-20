@@ -12,6 +12,6 @@
     "http": "0.0.0"
   },
   "scripts": {
-    "publish": "gcloud compute copy-files ./index.js ./package.json ./stage-build ./stage-build2 ./tag-build ./update-structure ci:/var/ci/server"
+    "publish": "gcloud compute copy-files ./index.js ./package.json ./stage-build2 ./tag-build ./update-structure ./update-catalog ci:/var/ci/server"
   }
 }

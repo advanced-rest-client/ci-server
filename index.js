@@ -160,7 +160,7 @@ class ArcCiServer {
       //   return;
       // }
       if (this.elementsParents.indexOf(repoName) !== -1) {
-        // this is a parent element and it can't be processed.
+        this._updateCatalog(repoName);
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
@@ -182,7 +182,7 @@ class ArcCiServer {
       console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
       return;
     }
-    this._runScript('./tag-build', [name], 'release');
+    this._runScript('./tag-build', [name], 'tag-build');
   }
 
   _processNewTag(name) {
@@ -282,6 +282,20 @@ class ArcCiServer {
     })
     .catch((e) => {
       console.log(`  stage-build2 exited with error ${e.message}`);
+      console.log(' ');
+    });
+  }
+  
+  _updateCatalog(name) {
+    console.log(' ');
+    console.log('  Updating catalog to update ', name);
+    var args = [name];
+    this._runScript('./update-catalog', args).then((code) => {
+      console.log(`  update-catalog exited with code ${code}`);
+      console.log(' ');
+    })
+    .catch((e) => {
+      console.log(`  update-catalog exited with error ${e.message}`);
       console.log(' ');
     });
   }
