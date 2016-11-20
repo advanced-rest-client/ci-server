@@ -148,10 +148,10 @@ class ArcCiServer {
         // Just quietly exit
         return;
       }
-      if (message === '[CI] Automated merge stage->master') {
+      if (message === '[ci skip] Automated merge stage->master.') {
         this.handleRelease(repoName);
       } else {
-        console.log('Unsuppoeted master commit');
+        console.log('Unsuppoeted master commit: ' + message);
       }
     } else if (branch.indexOf('refs/tags/') === 0) {
       // if (message.indexOf('[CI]') !== -1) {
@@ -163,7 +163,7 @@ class ArcCiServer {
         // this is a parent element and it can't be processed.
         return;
       }
-      if (message === '[CI] Automated merge stage->master') {
+      if (message === '[ci skip] Automated merge stage->master.') {
         this._processNewTag(repoName);
       }
     } else {
@@ -186,7 +186,7 @@ class ArcCiServer {
   }
 
   _processNewTag(name) {
-    console.log('Updating elements structure: ' + name);
+    // console.log('Updating element structure: ' + name);
     if (!process.env.GITHUB_TOKEN) {
       console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
       return;

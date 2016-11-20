@@ -2,54 +2,46 @@
 
 set -e
 
-ORIG_PATH=`pwd`
 COMPONENT=$1
-BUILD_PATH="`pwd`/../build"
 
 if [ -z "$COMPONENT" -a "${COMPONENT+xxx}" = "xxx" ]; then
   echo "Empty component name"
   exit 1;
 fi
 
-echo "Updating strucute for element $COMPONENT"
 
 function ensureDir() {
   if [ ! -d "$1" ]; then
     mkdir -p $1
   fi
 }
+
 function version() {
   local __version=$1
   local version=`node -pe 'JSON.parse(process.argv[1]).version' "$(cat bower.json)"`
   eval $__version="'$version'"
 }
+
 function throwError() {
   echo $1
   exit 111
 }
 
-FULL_NAME="advanced-rest-client/$COMPONENT";
-SSH="git@github.com:${FULL_NAME}.git";
-WORKING_DIR="${BUILD_PATH}/${COMPONENT}";
-
-ensureDir $WORKING_DIR
+BUILD_PATH="`pwd`/../build"
 cd $BUILD_PATH
+echo " "
+echo "  Hello. Updatnig structure for $COMPONENT"
 
+echo "  Instaling build tools..."
 npm install --silent arc-tools
-cd $COMPONENT
 
-if [ -d "$WORKING_DIR/.git/" ]; then
-  git fetch --all
-  git reset --hard origin/master
-  git checkout master 2> /dev/null;
-else
-  git clone $SSH
-fi
+echo "  Updating component..."
+./node_modules/.bin/arc clone $COMPONENT
 
-cd ../
-echo "Running arc structure --release $COMPONENT from `pwd`"
+echo "  Structuring element..."
 ./node_modules/.bin/arc structure --release $COMPONENT || throwError "Unable to update the structure element"
-echo "Structure updated. Updating catalog."
+
+echo "  Updating catalog..."
 UPDATE_DEPS=0
 if [ ! -d ./arc-element-catalog ]; then
   git clone git@github.com:advanced-rest-client/arc-element-catalog.git;
@@ -62,19 +54,19 @@ else
   UPDATE_DEPS=1
 fi
 if [ $UPDATE_DEPS == 0 ]; then
-  echo "Installing node"
+  echo "  Installing node..."
   npm install --silent
-  echo "Installing bower"
+  echo "  Installing bower..."
   bower install --silent
 else
-  echo "Updating node"
+  echo "  Updating node..."
   npm update --dev --silent
-  echo "Updating bower"
+  echo "  Updating bower..."
   bower update --save --save-dev --silent
 fi
 
-echo "Running build task"
+echo "  Building catalog..."
 gulp
-echo "Deploying... "
+echo "  Deploying... "
 firebase deploy --token "$FIREBASE_TOKEN" --project arc-element-catalog --non-interactive
 exit 0

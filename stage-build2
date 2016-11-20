@@ -25,6 +25,6 @@ git config --global user.email "arc@mulesoft.com"
 git config --global user.name "CI Agent"
 
 echo "  Executiong ARC stage"
-./node_modules/.bin/arc stage --working-dir="`pwd`" $COMPONENT
+./node_modules/.bin/arc stage --verbose --working-dir="`pwd`" $COMPONENT
 echo " "
 exit 0;
