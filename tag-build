@@ -61,5 +61,6 @@ echo "  Installing conventional-github-releaser..."
 npm install --silent conventional-github-releaser
 echo "  Creating the release..."
 ./node_modules/.bin/conventional-github-releaser -p eslint --token $GITHUB_TOKEN
-echo " "
+
+echo "  The element has been released."
 exit 0;

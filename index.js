@@ -151,7 +151,7 @@ class ArcCiServer {
       if (message === '[ci skip] Automated merge stage->master.') {
         this.handleRelease(repoName);
       } else {
-        console.log('Unsuppoeted master commit: ' + message);
+        console.log('Unsupported master commit: ' + message);
       }
     } else if (branch.indexOf('refs/tags/') === 0) {
       // if (message.indexOf('[CI]') !== -1) {
@@ -165,7 +165,9 @@ class ArcCiServer {
       }
       if (message === '[ci skip] Automated merge stage->master.') {
         this._processNewTag(repoName);
+        return;
       }
+      console.log('Unsupported tag commit message: ', message);
     } else {
       console.log('Dropping branch ' + branch);
     }
@@ -177,21 +179,37 @@ class ArcCiServer {
   }
 
   handleRelease(name) {
-    console.log('Tagging: ' + name);
+    console.log('  ');
+    console.log('  Tagging: ' + name);
     if (!process.env.GITHUB_TOKEN) {
       console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
       return;
     }
-    this._runScript('./tag-build', [name], 'tag-build');
+    this._runScript('./tag-build', [name]).then((code) => {
+      console.log(`  tag-build exited with code ${code}`);
+      console.log(' ');
+    })
+    .catch((e) => {
+      console.log(`  tag-build exited with error ${e.message}`);
+      console.log(' ');
+    });
   }
 
   _processNewTag(name) {
-    // console.log('Updating element structure: ' + name);
+    console.log('Updating element structure: ' + name);
     if (!process.env.GITHUB_TOKEN) {
       console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
       return;
     }
-    this._runScript('./update-structure', [name], 'structure');
+    this._runScript('./update-structure', [name], 'structure')
+    .then((code) => {
+      console.log(`  update-structure exited with code ${code}`);
+      console.log(' ');
+    })
+    .catch((e) => {
+      console.log(`  update-structure exited with error ${e.message}`);
+      console.log(' ');
+    });
   }
 
   /**
@@ -203,47 +221,49 @@ class ArcCiServer {
    */
   _runScript(file, params, name) {
     return new Promise((resolve, reject) => {
-      try {
-        const spawn = require('child_process').spawn;
-        const build = spawn(file, params);
+      setTimeout(function() {
+        try {
+          const spawn = require('child_process').spawn;
+          const build = spawn(file, params);
 
-        build.stdout.on('data', (data) => {
-          if (!data) {
-            return;
-          }
-          if (name) {
-            console.log(`[${name}]: ${data}`);
-          } else {
-            console.log(data.toString('utf8'));
-          }
-        });
+          build.stdout.on('data', (data) => {
+            if (!data) {
+              return;
+            }
+            if (name) {
+              console.log(`[${name}]: ${data}`);
+            } else {
+              console.log(data.toString('utf8'));
+            }
+          });
 
-        build.stderr.on('data', (data) => {
-          if (!data) {
-            return;
-          }
-          if (name) {
-            console.error(`[${name}]: ${data}`);
-          } else {
-            console.error(data.toString('utf8'));
-          }
-        });
+          build.stderr.on('data', (data) => {
+            if (!data) {
+              return;
+            }
+            if (name) {
+              console.error(`[${name}]: ${data}`);
+            } else {
+              console.error(data.toString('utf8'));
+            }
+          });
 
-        build.on('close', (code) => {
-          if (name) {
-            console.log(`[${name}] finished with code ${code}`);
-          }
-          if (code === 0 || code === '0') {
-            resolve(code);
-          } else {
-            reject(new Error(`task [${name}] finished with code ${code}`));
-          }
-        });
-      } catch (e) {
-        var msg = `[${name}] fatal error: ${e.message}`;
-        console.error(msg);
-        reject(msg);
-      }
+          build.on('close', (code) => {
+            if (name) {
+              console.log(`[${name}] finished with code ${code}`);
+            }
+            if (code === 0 || code === '0') {
+              resolve(code);
+            } else {
+              reject(new Error(`task [${name}] finished with code ${code}`));
+            }
+          });
+        } catch (e) {
+          var msg = `[${name}] fatal error: ${e.message}`;
+          console.error(msg);
+          reject(msg);
+        }
+      }, 3000);
     });
   }
   
