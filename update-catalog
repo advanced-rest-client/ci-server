@@ -22,12 +22,12 @@ if [ $UPDATE_DEPS == 0 ]; then
   echo "  Installing node..."
   npm install --silent
   echo "  Installing bower..."
-  bower install --silent
+  bower install --silent -F
 else
   echo "  Updating node..."
   npm update --dev --silent
   echo "  Updating bower..."
-  bower update --save --save-dev --silent
+  bower update --save --save-dev --silent -F
 fi
 
 echo "  Building the catalog..."
