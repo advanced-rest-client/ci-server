@@ -24,7 +24,7 @@ class ArcCiServer {
   }
 
   get ignored() {
-    return this.nonElements.concat(this.elementsParents);
+    return this.nonElements; //.concat(this.elementsParents);
   }
 
   constructor() {
@@ -123,9 +123,11 @@ class ArcCiServer {
     var repoName = body.repository.name;
     // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
     if (this.ignored.indexOf(repoName) !== -1) {
+      console.log('Rejecting repo ', repoName);
       return; // Don't process this repos.
     }
     if (branch === 'refs/heads/stage') {
+      console.info('Command rejected: Stage has been moved to other CI command.');
       //
       // This part was replaced by Travis call.
       // See raml-path-to-object for travis configuration.
@@ -146,9 +148,11 @@ class ArcCiServer {
     } else if (branch === 'refs/heads/master') {
       if (message === 'Initial commit') {
         // Just quietly exit
+        console.error('Command rejected: Will not handle initial commit.');
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
+        console.log('Command accepted: Handle release');
         this.handleRelease(repoName);
       } else {
         console.log('Unsupported master commit: ' + message);
@@ -160,10 +164,12 @@ class ArcCiServer {
       //   return;
       // }
       if (this.elementsParents.indexOf(repoName) !== -1) {
+        console.log('Command accepted: Update catalog');
         this._updateCatalog(repoName);
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
+        console.log('Command accepted: Process tag');
         this._processNewTag(repoName);
         return;
       }
