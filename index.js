@@ -152,7 +152,7 @@ class ArcCiServer {
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
-        window.setTimeout(function() {
+        setTimeout(() => {
           console.log('Command accepted: Handle release');
           this.handleRelease(repoName);
         }, 10000);
@@ -166,14 +166,14 @@ class ArcCiServer {
       //   return;
       // }
       if (this.elementsParents.indexOf(repoName) !== -1) {
-        window.setTimeout(function() {
+        setTimeout(() => {
           console.log('Command accepted: Update catalog');
           this._updateCatalog(repoName);
         }, 10000);
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
-        window.setTimeout(function() {
+        setTimeout(() => {
           console.log('Command accepted: Process tag');
           this._processNewTag(repoName);
         }, 10000);
