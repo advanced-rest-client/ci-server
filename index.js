@@ -88,7 +88,7 @@ class ArcCiServer {
         return res.sendStatus(204);
       }
     });
-    
+
     app.post('/travis-build', (req, res) => {
       if (!req.body) {
         console.log(req);
@@ -96,7 +96,7 @@ class ArcCiServer {
       }
       let event = req.get('x-travis-ci-event');
       switch (event) {
-        case 'build-stage': 
+        case 'build-stage':
           let body = JSON.parse(decoder.write(req.body));
           this.buildStage(body);
         break;
@@ -131,13 +131,13 @@ class ArcCiServer {
       //
       // This part was replaced by Travis call.
       // See raml-path-to-object for travis configuration.
-      // 
-      
+      //
+
       // if (message === 'Initial commit') {
       //   // Just quietly exit
       //   return;
       // }
-      // 
+      //
       // // Check if this isn't our own change to stage
       // if (message.indexOf('[CI]') === 0) {
       //   console.log('Dropping task. It\'s an CI commit.');
@@ -152,8 +152,10 @@ class ArcCiServer {
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
-        console.log('Command accepted: Handle release');
-        this.handleRelease(repoName);
+        window.setTimeout(function() {
+          console.log('Command accepted: Handle release');
+          this.handleRelease(repoName);
+        }, 10000);
       } else {
         console.log('Unsupported master commit: ' + message);
       }
@@ -164,13 +166,17 @@ class ArcCiServer {
       //   return;
       // }
       if (this.elementsParents.indexOf(repoName) !== -1) {
-        console.log('Command accepted: Update catalog');
-        this._updateCatalog(repoName);
+        window.setTimeout(function() {
+          console.log('Command accepted: Update catalog');
+          this._updateCatalog(repoName);
+        }, 10000);
         return;
       }
       if (message === '[ci skip] Automated merge stage->master.') {
-        console.log('Command accepted: Process tag');
-        this._processNewTag(repoName);
+        window.setTimeout(function() {
+          console.log('Command accepted: Process tag');
+          this._processNewTag(repoName);
+        }, 10000);
         return;
       }
       console.log('Unsupported tag commit message: ', message);
@@ -272,11 +278,11 @@ class ArcCiServer {
       }, 3000);
     });
   }
-  
+
   /**
    * Build stage branch after travis reported successful build.
    * This comand is executed not from the GitHub event but from travis `after_success` script.
-   * 
+   *
    * @param {Object} body Body sent from the script.
    */
   buildStage(body) {
@@ -291,7 +297,7 @@ class ArcCiServer {
     if (!slug || slug === 'unknown') {
       return console.error('The slug is unknown.');
     }
-    
+
     var elementName = slug.split('/')[1];
     console.log(' ');
     console.log('  Building element for stage.');
@@ -300,7 +306,7 @@ class ArcCiServer {
     console.log('    commit sha: %s', body.commit);
     // console.log('    is pull request: %s', body.pullRequest); // not yer to be used.
     // console.log('    pull request sha: %s', body.pullRequestSha);
-    
+
     var args = [elementName, body.buildNumber, body.jobNumber];
     this._runScript('./stage-build2', args).then((code) => {
       console.log(`  stage-build2 exited with code ${code}`);
@@ -311,7 +317,7 @@ class ArcCiServer {
       console.log(' ');
     });
   }
-  
+
   _updateCatalog(name) {
     console.log(' ');
     console.log('  Updating catalog to update ', name);
