@@ -15,7 +15,7 @@ class ArcCiServer {
 
   get elementsParents() {
     return ['chrome-elements', 'logic-elements', 'raml-elements', 'transport-elements',
-      'ui-elements'];
+      'ui-elements', 'anypoint-elements'];
   }
 
   get nonElements() {
