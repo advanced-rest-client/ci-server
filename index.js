@@ -119,7 +119,7 @@ class ArcCiServer {
       return;
     }
     // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-    var message = body.head_commit.message;
+    var message = body.head_commit ? body.head_commit.message : 'No message';
     var repoName = body.repository.name;
     // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
     if (this.ignored.indexOf(repoName) !== -1) {
