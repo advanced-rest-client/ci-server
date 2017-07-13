@@ -273,7 +273,7 @@ class ArcCiServer {
         } catch (e) {
           var msg = `[${name}] fatal error: ${e.message}`;
           console.error(msg);
-          reject(msg);
+          reject(new Error(msg));
         }
       }, 3000);
     });
