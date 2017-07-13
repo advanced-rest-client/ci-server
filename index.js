@@ -289,7 +289,8 @@ class ArcCiServer {
     if (body.branch !== 'stage') {
       return console.error('This is not the stage branch.');
     }
-    if (body.pullRequest === 'true' || body.pullRequest === true) {
+    var prNumber = Number(body.pullRequest);
+    if (prNumber === prNumber) {
       // TODO: should update author's agreement for publishing code.
       return console.info('Passing on pull request');
     }
