@@ -32,8 +32,8 @@ cd $BUILD_PATH
 echo " "
 echo "  Hello. Updatnig structure for $COMPONENT"
 
-echo "  Instaling build tools..."
-npm install --silent arc-tools
+# echo "  Instaling build tools..."
+# npm install --silent arc-tools
 
 echo "  Updating component..."
 ./node_modules/.bin/arc clone $COMPONENT
