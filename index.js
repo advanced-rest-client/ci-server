@@ -7,26 +7,44 @@ const bodyParser = require('body-parser');
 const http = require('http');
 const StringDecoder = require('string_decoder').StringDecoder;
 const decoder = new StringDecoder('utf8');
+const {StageBuild} = require('./lib/stage-build');
 
 app.use(router);
 app.use(bodyParser.raw({type: 'application/*', limit: '50mb'}));
-
+/**
+ * The CI class working witgh travis requests to build the API components.
+ */
 class ArcCiServer {
-
+  /**
+   * Parent elements.
+   * @deprecated Parent elements won't be used in the future.
+   * @return {Array}
+   */
   get elementsParents() {
-    return ['chrome-elements', 'logic-elements', 'raml-elements', 'transport-elements',
-      'ui-elements', 'anypoint-elements'];
+    return ['chrome-elements', 'logic-elements', 'raml-elements',
+      'transport-elements', 'ui-elements', 'anypoint-elements'];
   }
-
+  /**
+   * List of know not arc component projects.
+   *
+   * @deprecated
+   * @return {Array}
+   */
   get nonElements() {
     return ['arc-datastore', 'arc-tools', 'polymd', 'cookie-parser',
     'har', 'arc-element-catalog', 'ci-server'];
   }
-
+  /**
+   * List of ignored projects.
+   *
+   * @return {Array}
+   */
   get ignored() {
-    return this.nonElements; //.concat(this.elementsParents);
+    return this.nonElements;
   }
-
+  /**
+   * @constructor
+   */
   constructor() {
     this.port = 5243;
     app.disable('x-powered-by');
@@ -34,27 +52,23 @@ class ArcCiServer {
     this.setHandlers();
     this.createServer();
   }
-
+  /**
+   * Sets routing to handle communcation.
+   */
   setHandlers() {
     this.setStageUpdate();
-    // this.setTestServiice();
   }
-
+  /**
+   * Creates server instance.
+   */
   createServer() {
-    var httpServer = http.createServer(app);
+    const httpServer = http.createServer(app);
     httpServer.listen(this.port, () => {
       console.log('HTTP started (' + this.port + ').');
     });
   }
-
-  // setTestServiice() {
-  //   app.get('/', (req, res) => {
-  //     this.handleRelease('test-element');
-  //   });
-  // }
-
   /**
-   * This endpoint is called when the `stage` branch has been updated (after PR).
+   * This endpoint is called when the `stage` branch has been updated.
    *
    * It calls a script that is building docs, changelog and bumping version.
    * Next it will commit changes and merge it with master.
@@ -62,15 +76,12 @@ class ArcCiServer {
    */
   setStageUpdate() {
     app.post('/build', (req, res) => {
+      // Old system. Inactive.
       if (!req.body) {
-        console.log(req);
         return res.sendStatus(400);
       }
       let event = req.get('X-GitHub-Event');
       if (event === 'ping') {
-        // console.log(decoder.write(req.body));
-        // hmac.update(req.body);
-        // console.log(hmac.digest('hex'));
         return res.sendStatus(204);
       }
       let allowedEvents = ['push'];
@@ -79,10 +90,10 @@ class ArcCiServer {
       }
       res.set('Connection', 'close');
       let body = JSON.parse(decoder.write(req.body));
-      // if (event === 'pull_request') {
+      if (event === 'pull_request') {
       //   // this.handlePullRequest(body);
-      //   return res.sendStatus(204);
-      // }
+        return res.sendStatus(204);
+      }
       if (event === 'push') {
         this.handlePush(body);
         return res.sendStatus(204);
@@ -106,45 +117,27 @@ class ArcCiServer {
       return res.sendStatus(204);
     });
   }
-
-  // handlePullRequest(body) {
-  //   // empty for now
-  //   console.log('handlePullRequest');
-  // }
-
+  /**
+   * Handles web-hook message
+   *
+   * @param {Object} body Body from the request
+   */
   handlePush(body) {
-    var branch = body.ref;
+    const branch = body.ref;
     if (!branch) {
       console.log('No ref...');
       return;
     }
     // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-    var message = body.head_commit ? body.head_commit.message : 'No message';
-    var repoName = body.repository.name;
+    const message = body.head_commit ? body.head_commit.message : 'No message';
+    const repoName = body.repository.name;
     // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
     if (this.ignored.indexOf(repoName) !== -1) {
       console.log('Rejecting repo ', repoName);
       return; // Don't process this repos.
     }
     if (branch === 'refs/heads/stage') {
-      console.info('Command rejected: Stage has been moved to other CI command.');
-      //
-      // This part was replaced by Travis call.
-      // See raml-path-to-object for travis configuration.
-      //
-
-      // if (message === 'Initial commit') {
-      //   // Just quietly exit
-      //   return;
-      // }
-      //
-      // // Check if this isn't our own change to stage
-      // if (message.indexOf('[CI]') === 0) {
-      //   console.log('Dropping task. It\'s an CI commit.');
-      //   console.log();
-      //   return;
-      // }
-      // this.handleStageBuild(repoName);
+      return;
     } else if (branch === 'refs/heads/master') {
       if (message === 'Initial commit') {
         // Just quietly exit
@@ -155,41 +148,17 @@ class ArcCiServer {
         setTimeout(() => {
           console.log('Command accepted: Handle release');
           this.handleRelease(repoName);
-        }, 10000);
-      } else {
-        console.log('Unsupported master commit: ' + message);
+        }, 1000);
       }
-    } else if (branch.indexOf('refs/tags/') === 0) {
-      // if (message.indexOf('[CI]') !== -1) {
-      //   console.log('Dropping task. It\'s an CI commit.');
-      //   console.log();
-      //   return;
-      // }
-      if (this.elementsParents.indexOf(repoName) !== -1) {
-        setTimeout(() => {
-          console.log('Command accepted: Update catalog');
-          this._updateCatalog(repoName);
-        }, 10000);
-        return;
-      }
-      if (message === '[ci skip] Automated merge stage->master.') {
-        setTimeout(() => {
-          console.log('Command accepted: Process tag');
-          this._processNewTag(repoName);
-        }, 10000);
-        return;
-      }
-      console.log('Unsupported tag commit message: ', message);
     } else {
       console.log('Dropping branch ' + branch);
     }
   }
-
-  handleStageBuild(name) {
-    console.log('Building: ' + name);
-    this._runScript('./stage-build', [name], 'stage');
-  }
-
+  /**
+   * Creates tags for new release.
+   *
+   * @param {String} name component name.
+   */
   handleRelease(name) {
     console.log('  ');
     console.log('  Tagging: ' + name);
@@ -207,29 +176,13 @@ class ArcCiServer {
     });
   }
 
-  _processNewTag(name) {
-    console.log('Updating element structure: ' + name);
-    if (!process.env.GITHUB_TOKEN) {
-      console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
-      return;
-    }
-    this._runScript('./update-structure', [name], 'structure')
-    .then((code) => {
-      console.log(`  update-structure exited with code ${code}`);
-      console.log(' ');
-    })
-    .catch((e) => {
-      console.log(`  update-structure exited with error ${e.message}`);
-      console.log(' ');
-    });
-  }
-
   /**
    * Run a bash file
    *
    * @param {String} file A file name to Run
    * @param {Array<String>} params Array of parameters
    * @param {String} name The name of process to mark. Optional.
+   * @return {Promise}
    */
   _runScript(file, params, name) {
     return new Promise((resolve, reject) => {
@@ -271,7 +224,7 @@ class ArcCiServer {
             }
           });
         } catch (e) {
-          var msg = `[${name}] fatal error: ${e.message}`;
+          const msg = `[${name}] fatal error: ${e.message}`;
           console.error(msg);
           reject(new Error(msg));
         }
@@ -281,58 +234,49 @@ class ArcCiServer {
 
   /**
    * Build stage branch after travis reported successful build.
-   * This comand is executed not from the GitHub event but from travis `after_success` script.
+   * This comand is executed not from the GitHub event but from travis
+   * `after_success` script.
    *
    * @param {Object} body Body sent from the script.
    */
   buildStage(body) {
     if (body.branch !== 'stage') {
-      return console.error('This is not the stage branch.');
+      console.error('This is not the stage branch.');
+      return;
     }
-    var prNumber = Number(body.pullRequest);
+    const prNumber = Number(body.pullRequest);
     if (prNumber === prNumber) {
       // TODO: should update author's agreement for publishing code.
-      return console.info('Passing on pull request');
+      console.info('Passing on pull request');
+      return;
     }
-    var slug = body.slug; // owner_name/repo_name
+    const slug = body.slug; // owner_name/repo_name
     if (!slug || slug === 'unknown') {
-      return console.error('The slug is unknown.');
+      console.error('The slug is unknown.');
+      return;
     }
 
-    var elementName = slug.split('/')[1];
+    const elementName = slug.split('/')[1];
     console.log(' ');
     console.log('  Building element for stage.');
     console.log('    build number: %s', body.buildNumber);
     console.log('    job #: %s', body.jobNumber);
     console.log('    commit sha: %s', body.commit);
-    // console.log('    is pull request: %s', body.pullRequest); // not yer to be used.
-    // console.log('    pull request sha: %s', body.pullRequestSha);
+    const args = [elementName, body.buildNumber, body.jobNumber];
 
-    var args = [elementName, body.buildNumber, body.jobNumber];
-    this._runScript('./stage-build2', args).then((code) => {
-      console.log(`  stage-build2 exited with code ${code}`);
+    console.info('  Getting latest component stage.');
+    this._runScript('./update-git-element.sh', args).then(() => {
+      console.log(`  Code base updated. Processing stage.`);
       console.log(' ');
+      const builder = new StageBuild(elementName);
+      return builder.build();
     })
+    .then(() => console.info('Stage build complete.'))
     .catch((e) => {
       console.log(`  stage-build2 exited with error ${e.message}`);
       console.log(' ');
     });
   }
-
-  _updateCatalog(name) {
-    console.log(' ');
-    console.log('  Updating catalog to update ', name);
-    var args = [name];
-    this._runScript('./update-catalog', args).then((code) => {
-      console.log(`  update-catalog exited with code ${code}`);
-      console.log(' ');
-    })
-    .catch((e) => {
-      console.log(`  update-catalog exited with error ${e.message}`);
-      console.log(' ');
-    });
-  }
-
 }
 
 new ArcCiServer();

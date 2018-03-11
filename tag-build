@@ -54,7 +54,7 @@ then
     exit 0;
 fi
 echo "  Tagging version..."
-git tag -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "  Error: Tag $elementVersion already exists."
+git tag -s -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "  Error: Tag $elementVersion already exists."
 echo "  Pushing tags..."
 git push origin master --tags
 echo "  Installing conventional-github-releaser..."
