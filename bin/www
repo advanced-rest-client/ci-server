@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+'use strict';
+const app = require('../app');
+const debug = require('debug')('express:server');
+const http = require('http');
+const wwwPort = 5243;
+const appSetup = {
+  /**
+   * Event listener for HTTP server "error" event.
+   *
+   * @param {Number} port
+   * @param {Error} error
+   */
+  errorHandler: function(port, error) {
+    if (error.syscall !== 'listen') {
+      throw error;
+    }
+    const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+      case 'EACCES':
+        console.error(bind + ' requires elevated privileges');
+        process.exit(1);
+        break;
+      case 'EADDRINUSE':
+        console.error(bind + ' is already in use');
+        process.exit(1);
+        break;
+      default:
+        throw error;
+    }
+  },
+  /**
+   * Event listener for HTTP server "listening" event.
+   *
+   * @param {Object} server
+   */
+  listenHandler: function(server) {
+    const addr = server.address();
+    const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' +
+    addr.port;
+    console.log('Listening on ' + bind);
+    debug('Listening on ' + bind);
+  },
+
+  listen: function() {
+    const server = http.createServer(app);
+    server.listen(wwwPort);
+    server.on('error', appSetup.errorHandler.bind(app, wwwPort));
+    server.on('listening', appSetup.listenHandler.bind(app, server));
+  }
+};
+appSetup.listen();
