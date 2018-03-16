@@ -19,6 +19,7 @@ class TravisBuildRoute extends BaseRoute {
   initRoute() {
     router.options('/(.*)', this._onGetOptions);
     router.post('/', this._onBuild.bind(this));
+    router.get('/force-stage/:component', this._onForceBuild.bind(this));
   }
   /**
    * Handler for build route.
@@ -79,6 +80,29 @@ class TravisBuildRoute extends BaseRoute {
       console.log(`  Code base updated. Processing stage.`);
       console.log(' ');
       const builder = new StageBuild(elementName);
+      return builder.build();
+    })
+    .then(() => console.info('Stage build complete.'))
+    .catch((e) => {
+      console.log(`  stage-build2 exited with error ${e.message}`);
+      console.log(' ');
+    });
+  }
+  /**
+   * Endpoint to force builkd of the element.
+   * This always increates component version.
+   *
+   * @param {Object} req
+   * @param {Object} res
+   */
+  _onForceBuild(req, res) {
+    const component = req.params.component;
+    res.sendStatus(204);
+    const args = [component, 'force', '0'];
+    this._runScript('./update-git-element.sh', args).then(() => {
+      console.log(`  Code base updated. Processing stage.`);
+      console.log(' ');
+      const builder = new StageBuild(component);
       return builder.build();
     })
     .then(() => console.info('Stage build complete.'))
