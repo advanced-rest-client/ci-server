@@ -57,7 +57,7 @@ class TravisBuildRoute extends BaseRoute {
       console.info(body);
       return;
     }
-    if (body.pullRequest) {
+    if (body.pullRequest && body.pullRequest !== 'false') {
       // TODO: should update author's agreement for publishing code.
       console.info('Passing on pull request.');
       console.info(body);
