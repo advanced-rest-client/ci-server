@@ -54,11 +54,13 @@ class TravisBuildRoute extends BaseRoute {
   buildStage(body) {
     if (body.branch !== 'stage') {
       console.error('This is not the stage branch.');
+      console.info(body);
       return;
     }
     if (body.pullRequest) {
       // TODO: should update author's agreement for publishing code.
-      console.info('Passing on pull request');
+      console.info('Passing on pull request.');
+      console.info(body);
       return;
     }
     const slug = body.slug; // owner_name/repo_name
@@ -70,10 +72,8 @@ class TravisBuildRoute extends BaseRoute {
     const elementName = slug.split('/')[1];
     console.log(' ');
     console.log('  Building element for stage.');
-    console.log('    build number: %s', body.buildNumber);
-    console.log('    job #: %s', body.jobNumber);
     console.log('    commit sha: %s', body.commit);
-    const args = [elementName, body.buildNumber, body.jobNumber];
+    const args = [elementName];
 
     console.info('  Getting latest component stage.');
     this._runScript('./update-git-element.sh', args).then(() => {
