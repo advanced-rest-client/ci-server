@@ -36,8 +36,11 @@ else
   cd $COMPONENT
   # For any previous errors
   git reset --hard
-  git checkout stage
-  git reset --hard origin/stage
+  currentBranch=`git rev-parse --abbrev-ref HEAD`
+  if [ "$currentBranch" != "stage" ]; then
+    git checkout stage
+    git reset --hard origin/stage
+  fi
   git pull origin stage
 fi
 
