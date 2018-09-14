@@ -17,8 +17,8 @@ fi
 
 cd ../build
 
-echo "  Installing ARC tools..."
-npm install --silent arc-tools
+# echo "  Installing ARC tools..."
+# npm install --silent arc-tools
 
 # some credentials
 git config --global user.email "arc@mulesoft.com"

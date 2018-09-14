@@ -57,8 +57,8 @@ echo "  Tagging version..."
 git tag -s -a $elementVersion -m "Created Tag for version: $elementVersion" || throwError "  Error: Tag $elementVersion already exists."
 echo "  Pushing tags..."
 git push origin master --tags
-echo "  Installing conventional-github-releaser..."
-npm install --silent conventional-github-releaser
+# echo "  Installing conventional-github-releaser..."
+# npm install --silent conventional-github-releaser
 echo "  Creating the release..."
 ./node_modules/.bin/conventional-github-releaser -p eslint --token $GITHUB_TOKEN
 
