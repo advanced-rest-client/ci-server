@@ -102,10 +102,11 @@ class GithubWebhookRoute extends BaseRoute {
     if (branch === 'refs/heads/stage') {
       return;
     } else if (branch === 'refs/heads/master') {
-      if (message === 'Initial commit') {
+      const lowerMessage = (message || '').toLowerCase();
+      if (lowerMessage.indexOf('initial commit') === 0) {
         return;
       }
-      if (message === '[ci skip] Automated merge stage->master.') {
+      if (lowerMessage.indexOf('[ci skip]') === -1) {
         console.log('Handling release...');
         this.handleRelease(repoName);
       }
