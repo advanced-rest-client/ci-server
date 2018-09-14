@@ -1,5 +1,5 @@
 const {CatalogDataGenerator} = require('./lib/data-generator');
-const builder = new CatalogDataGenerator('xml-viewer', '2.0.0');
+const builder = new CatalogDataGenerator('api-method-documentation', '2.0.15');
 builder.build()
 .catch((e) => console.error(e));
 // const slug = require('slug');

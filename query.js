@@ -53,7 +53,7 @@ function listVersions(group, component) {
   });
 }
 
-listGroups();
-listComponents('ApiElements');
+// listGroups();
+// listComponents('ApiElements');
 // listComponents('UiElements');
-listVersions('ApiElements', 'date-time');
+listVersions('ApiElements', 'api-method-documentation');
