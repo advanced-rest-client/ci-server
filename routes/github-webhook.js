@@ -79,6 +79,7 @@ class GithubWebhookRoute extends BaseRoute {
       res.sendStatus(204);
       return;
     }
+    res.sendStatus(400);
   }
   /**
    * Handles web-hook message
@@ -106,10 +107,7 @@ class GithubWebhookRoute extends BaseRoute {
       if (lowerMessage.indexOf('initial commit') === 0) {
         return;
       }
-      if (lowerMessage.indexOf('[ci skip]') === -1) {
-        console.log('Handling release...');
-        this.handleRelease(repoName);
-      }
+      this.handleRelease(repoName);
     } else if (branch.indexOf('refs/tags/') === 0) {
       this.updateCatalogData(repoName, branch.substr(10));
     } else {
@@ -124,7 +122,7 @@ class GithubWebhookRoute extends BaseRoute {
    */
   handleRelease(name) {
     console.log('  ');
-    console.log('  Tagging: ' + name);
+    console.log('  Will release: ' + name);
     if (!process.env.GITHUB_TOKEN) {
       console.error('process.env.GITHUB_TOKEN IS UNAVAILABLE');
       return;
