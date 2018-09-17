@@ -1,9 +1,9 @@
 'use strict';
-if (process.env.NODE_ENV === 'production') {
-  require('@google-cloud/trace-agent').start();
-  require('@google-cloud/debug-agent').start();
-}
-const errors = require('@google-cloud/error-reporting')();
+// if (process.env.NODE_ENV === 'production') {
+//   require('@google-cloud/trace-agent').start();
+//   require('@google-cloud/debug-agent').start();
+// }
+// const errors = require('@google-cloud/error-reporting')();
 const express = require('express');
 const logger = require('morgan');
 const logging = require('./lib/logging');
@@ -49,7 +49,7 @@ if (app.get('env') === 'development') {
 // production error handler
 // no stacktraces leaked to user
 app.use((err, req, res) => {
-  errors.report(err);
+  // errors.report(err);
   res.status(err.status || 500);
   res.render('error', {
     message: err.message,
