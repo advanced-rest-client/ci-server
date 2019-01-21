@@ -26,6 +26,7 @@ app.use(logging.requestLogger);
 /* API routes */
 app.use('/build', require('./routes/github-webhook'));
 app.use('/travis-build', require('./routes/travis-build'));
+app.use('/status-change', require('./routes/status-change'));
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
